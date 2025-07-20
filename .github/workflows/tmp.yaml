@@ -3,8 +3,6 @@ name: Build and Deploy to ECR
 on:
   push:
     branches: [ main, develop ]
-  release:
-    types: [ published ]
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
@@ -15,34 +13,52 @@ jobs:
     name: Build and Push to ECR
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
+      id-token: write # # GitHub에서 OIDC 토큰 요청
       contents: read
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+    # - name: Configure AWS credentials
+    #   uses: aws-actions/configure-aws-credentials@v4
+    #   with:
+    #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    #     aws-region: ${{ env.AWS_REGION }}
 
     - name: Configure AWS OIDC 
       uses: aws-actions/configure-aws-credentials@v4
       with:
+        # AWS 계정 ID와 생성한 역할 이름으로 교체
         role-to-assume: arn:aws:iam::023182678225:role/AWSAccessOIDCGitHub
         aws-region: ${{ env.AWS_REGION }}
+
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Set Image Tag for Tag Push 
+      # GitHub ref가 'refs/tags/'로 시작하는 경우 이 스텝 실행
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        echo "IMAGE_TAG=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
+
+    - name: Set Image Tag for Main Branch Push
+      # GitHub ref가 'refs/heads/'로 시작하는 경우 이 스텝 실행
+      if: github.ref == 'refs/heads/main'
+      run: |
+        echo "IMAGE_TAG=latest" >> "$GITHUB_ENV"
+
+    - name: Set Image Tag for Other Branch Push
+      # GitHub ref가 'refs/heads/'로 시작하는 경우 이 스텝 실행
+      if: |
+        github.ref != 'refs/heads/main' &&
+        !startsWith(github.ref, 'refs/tags/')
+      run: |
+        echo "IMAGE_TAG=${GITHUB_REF#refs/heads/}" >> "$GITHUB_ENV"
         
-
-
-    # - name: Login to Amazon ECR
-    #   id: login-ecr
-    #   uses: aws-actions/amazon-ecr-login@v2
-
-    # - name: Extract metadata
-    #   id: meta
     #   run: |
     #     # 브랜치명 또는 태그명에서 이미지 태그 생성
     #     if [[ $GITHUB_REF == refs/tags/* ]]; then
@@ -64,20 +80,14 @@ jobs:
     #     echo "sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
     #     echo "registry=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_OUTPUT
 
-    # - name: Build Docker image
-    #   env:
-    #     ECR_REGISTRY: ${{ steps.meta.outputs.registry }}
-    #     IMAGE_TAG: ${{ steps.meta.outputs.version }}
-    #     IMAGE_SHA: ${{ steps.meta.outputs.sha }}
-    #   run: |
-    #     # Docker 이미지 빌드
-    #     docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-    #     docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_SHA .
+    - name: Build Docker image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         
-    #     # main 브랜치인 경우 latest 태그도 추가
-    #     if [[ "$IMAGE_TAG" == "latest" ]]; then
-    #       docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-    #     fi
+      run: |
+        # Docker 이미지 빌드
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+  
 
     # - name: Run tests (optional)
     #   run: |
@@ -85,20 +95,10 @@ jobs:
     #     # docker run --rm $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.meta.outputs.version }} python -m pytest
     #     echo "Tests would run here"
 
-    # - name: Push image to Amazon ECR
-    #   env:
-    #     ECR_REGISTRY: ${{ steps.meta.outputs.registry }}
-    #     IMAGE_TAG: ${{ steps.meta.outputs.version }}
-    #     IMAGE_SHA: ${{ steps.meta.outputs.sha }}
-    #   run: |
-    #     # ECR에 이미지 푸시
-    #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-    #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_SHA
-        
-    #     # main 브랜치인 경우 latest도 푸시
-    #     if [[ "$IMAGE_TAG" == "latest" ]]; then
-    #       docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-    #     fi
+    - name: Push image to Amazon ECR
+      run: |
+        # ECR에 이미지 푸시
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
     # - name: Output image URIs
     #   env:
