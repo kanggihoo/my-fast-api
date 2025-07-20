@@ -96,6 +96,8 @@ jobs:
     #     echo "Tests would run here"
 
     - name: Push image to Amazon ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
         # ECR에 이미지 푸시
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
