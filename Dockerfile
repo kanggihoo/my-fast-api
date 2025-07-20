@@ -46,5 +46,5 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 EXPOSE 8000
 
 # FastAPI 앱 실행 (uvicorn)
-CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"] 
+CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] 
 

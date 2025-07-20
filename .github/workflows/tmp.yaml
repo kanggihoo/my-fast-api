@@ -102,12 +102,9 @@ jobs:
         # ECR에 이미지 푸시
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-    # - name: Output image URIs
-    #   env:
-    #     ECR_REGISTRY: ${{ steps.meta.outputs.registry }}
-    #     IMAGE_TAG: ${{ steps.meta.outputs.version }}
-    #     IMAGE_SHA: ${{ steps.meta.outputs.sha }}
-    #   run: |
-    #     echo "Image URIs:"
-    #     echo "- $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-    #     echo "- $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_SHA"
+    - name: Output image URIs
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      run: |
+        echo "Image URIs:"
+        echo "- $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
