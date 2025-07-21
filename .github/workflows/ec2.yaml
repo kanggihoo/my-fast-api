@@ -8,11 +8,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-    
+
     - name: Deploy to EC2
       uses: appleboy/ssh-action@v1.0.0
       with:
@@ -22,44 +22,45 @@ jobs:
         script: |
           # 작업 디렉토리 설정
           cd ~
-          
+
           # uv 설치 확인 및 설치
           if ! command -v uv &> /dev/null; then
             echo "uv가 설치되어 있지 않습니다. 설치를 진행합니다..."
             curl -LsSf https://astral.sh/uv/install.sh | sh
-            source $HOME/.cargo/env
+            # uv가 설치된 경로를 PATH에 추가
+            export PATH="$HOME/.local/bin:$PATH"
           else
             echo "uv가 이미 설치되어 있습니다."
           fi
-          
+
           # 프로젝트 디렉토리 설정 (필요에 따라 변경)
           PROJECT_DIR="fastapi-app"
-          
+
           # 기존 프로세스 종료
           echo "기존 FastAPI 프로세스를 종료합니다..."
           pkill -f "uvicorn" || true
-          
+
           # 기존 디렉토리가 있으면 삭제
           if [ -d "$PROJECT_DIR" ]; then
             echo "기존 프로젝트 디렉토리를 삭제합니다..."
             rm -rf $PROJECT_DIR
           fi
-          
+
           # GitHub 저장소 클론
           echo "GitHub 저장소를 클론합니다..."
           git clone https://github.com/${{ github.repository }}.git $PROJECT_DIR
           cd $PROJECT_DIR
-          
+
           # 가상환경 생성 및 의존성 설치
           echo "가상환경을 생성하고 의존성을 설치합니다..."
           uv venv
           source .venv/bin/activate
           uv sync
-          
+
           # FastAPI 서버 백그라운드로 실행
           echo "FastAPI 서버를 시작합니다..."
           nohup uv run uvicorn main:app --host 0.0.0.0 --port 8000 > ../fastapi.log 2>&1 &
-          
+
           # 프로세스 확인
           sleep 5
           if pgrep -f "uvicorn" > /dev/null; then
