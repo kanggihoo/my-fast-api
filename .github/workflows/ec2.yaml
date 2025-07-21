@@ -22,7 +22,7 @@ jobs:
         script: |
           echo "작업 시작: $(date)" # 디버깅을 위한 타임스탬프
 
-          PROJECT_DIR="/home/TheFirstTake"
+          PROJECT_DIR="/home/my-fast-api"
 
           if [ ! -d "$PROJECT_DIR" ]; then
             echo "📁 프로젝트 디렉토리를 생성하고 리포지토리를 clone합니다..."
