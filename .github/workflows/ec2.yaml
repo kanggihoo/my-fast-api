@@ -21,8 +21,8 @@ jobs:
         key: ${{ secrets.AI_SERVER_EC2_SSH_KEY }}
         script: |
           echo "작업 시작: $(date)" # 디버깅을 위한 타임스탬프
-
-          PROJECT_DIR="~/my-fast-api"
+          HOME_DIR="/home/${{ secrets.AI_SERVER_EC2_USERNAME }}"
+          PROJECT_DIR="${HOME_DIR}/my-fast-api"
 
           # Git 설치 확인 및 설치 (Amazon Linux용)
           if ! command -v git &> /dev/null; then
