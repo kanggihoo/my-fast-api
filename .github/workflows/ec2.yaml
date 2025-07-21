@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Deploy to EC2
       uses: appleboy/ssh-action@v1.0.0
@@ -19,6 +19,7 @@ jobs:
         host: ${{ secrets.AI_SERVER_EC2_HOST }}
         username: ${{ secrets.AI_SERVER_EC2_USERNAME }}
         key: ${{ secrets.AI_SERVER_EC2_SSH_KEY }}
+        timeout: 300s # SSH 연결 및 스크립트 실행에 대한 타임아웃을 5분(300초)으로 설정합니다.
         script: |
           set -e # 이 줄을 추가하여 어떤 명령이 실패하면 즉시 스크립트를 종료합니다.
                  # 이렇게 하면 오류가 발생한 정확한 위치를 파악하기 쉽습니다.
