@@ -22,7 +22,7 @@ jobs:
         script: |
           echo "작업 시작: $(date)" # 디버깅을 위한 타임스탬프
 
-          PROJECT_DIR="/home/my-fast-api"
+          PROJECT_DIR="~/my-fast-api"
 
           # Git 설치 확인 및 설치 (Amazon Linux용)
           if ! command -v git &> /dev/null; then
