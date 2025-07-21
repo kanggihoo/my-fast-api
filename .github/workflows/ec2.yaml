@@ -19,16 +19,21 @@ jobs:
         host: ${{ secrets.AI_SERVER_EC2_HOST }}
         username: ${{ secrets.AI_SERVER_EC2_USERNAME }}
         key: ${{ secrets.AI_SERVER_EC2_SSH_KEY }}
-        timeout: 300s # SSH 연결 및 스크립트 실행에 대한 타임아웃을 5분(300초)으로 설정합니다.
         script: |
-          set -e # 이 줄을 추가하여 어떤 명령이 실패하면 즉시 스크립트를 종료합니다.
-                 # 이렇게 하면 오류가 발생한 정확한 위치를 파악하기 쉽습니다.
-
           echo "작업 시작: $(date)" # 디버깅을 위한 타임스탬프
 
-          # 작업 디렉토리 설정
-          cd ~
-          echo "현재 작업 디렉토리: $(pwd)"
+          PROJECT_DIR="/home/TheFirstTake"
+
+          if [ ! -d "$PROJECT_DIR" ]; then
+            echo "📁 프로젝트 디렉토리를 생성하고 리포지토리를 clone합니다..."
+            git clone https://github.com/kanggihoo/my-fast-api.git
+            cd $PROJECT_DIR
+          else
+            echo "📁 기존 프로젝트 디렉토리를 사용합니다..."
+            cd $PROJECT_DIR
+            git pull origin main
+          fi
+          echo "저장소 클론 완료."
 
           # uv 설치 확인 및 설치
           if ! command -v uv &> /dev/null; then
@@ -40,41 +45,16 @@ jobs:
             echo "uv가 이미 설치되어 있습니다."
           fi
 
-          # 프로젝트 디렉토리 설정 (필요에 따라 변경)
-          PROJECT_DIR="fastapi-app"
-          echo "프로젝트 디렉토리: $PROJECT_DIR"
-
-          # 기존 FastAPI 프로세스 종료
-          echo "기존 FastAPI 프로세스를 종료합니다..."
-          # pkill 명령이 실패하더라도 스크립트가 계속 실행되도록 || true 추가
-          pkill -f "uvicorn" || true
-          echo "기존 FastAPI 프로세스 종료 시도 완료."
-
-          # 기존 디렉토리가 있으면 삭제
-          if [ -d "$PROJECT_DIR" ]; then
-            echo "기존 프로젝트 디렉토리($PROJECT_DIR)를 삭제합니다..."
-            rm -rf $PROJECT_DIR
-            echo "기존 프로젝트 디렉토리 삭제 완료."
-          else
-            echo "기존 프로젝트 디렉토리($PROJECT_DIR)가 없습니다. 새로 클론합니다."
+           # Python 가상환경 확인 및 생성
+          if [ ! -d "venv" ]; then
+            echo "📦 Python 가상환경을 생성합니다..."
+            
           fi
-
-          # GitHub 저장소 클론
-          echo "GitHub 저장소를 클론합니다..."
-          # 중요: 저장소가 비공개인 경우, 아래 주석 처리된 라인처럼 GITHUB_TOKEN을 사용하여 인증해야 합니다.
-          # envs: GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} 를 ssh-action with 블록에 추가하고
-          # git clone https://oauth2:$GITHUB_TOKEN@github.com/${{ github.repository }}.git $PROJECT_DIR
-          git clone https://github.com/${{ github.repository }}.git $PROJECT_DIR
-          echo "저장소 클론 완료."
-
-          # 클론된 프로젝트 디렉토리로 이동
-          cd $PROJECT_DIR
-          echo "프로젝트 디렉토리로 이동 완료: $(pwd)"
 
           # 가상환경 생성 및 의존성 설치
           echo "가상환경을 생성하고 의존성을 설치합니다..."
-          uv venv
-          source .venv/bin/activate
+          # uv venv
+          # source .venv/bin/activate
           uv sync
           echo "가상환경 및 의존성 설치 완료."
 
