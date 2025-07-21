@@ -24,6 +24,16 @@ jobs:
 
           PROJECT_DIR="/home/my-fast-api"
 
+          # Git 설치 확인 및 설치 (Amazon Linux용)
+          if ! command -v git &> /dev/null; then
+            echo "git이 설치되어 있지 않습니다. 설치를 진행합니다..."
+            sudo yum update -y # 패키지 목록 업데이트 (Amazon Linux)
+            sudo yum install git -y # git 설치 (Amazon Linux)
+            echo "git 설치 완료."
+          else
+            echo "git이 이미 설치되어 있습니다."
+          fi
+
           if [ ! -d "$PROJECT_DIR" ]; then
             echo "📁 프로젝트 디렉토리를 생성하고 리포지토리를 clone합니다..."
             git clone https://github.com/kanggihoo/my-fast-api.git
